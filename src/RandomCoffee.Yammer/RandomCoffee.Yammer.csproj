@@ -8,5 +8,9 @@
     <AdditionalFiles Include="..\CodeMetricsConfig.txt" Link="CodeMetricsConfig.txt" />
     <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
   </ItemGroup>
+    
+  <ItemGroup>
+    <PackageReference Include="RandomCoffee.Core" Version="0.1.0-alpha" />
+  </ItemGroup>
 
 </Project>
