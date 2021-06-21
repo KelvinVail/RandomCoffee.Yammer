@@ -8,6 +8,6 @@ namespace RandomCoffee.Yammer.Contracts
     {
         Task<IEnumerable<long>> GetActiveUserIds(long groupId, CancellationToken cancellationToken = default);
 
-        Task PostMessageToGroup(long groupId, string message, CancellationToken cancellationToken = default);
+        Task PostToGroup(long groupId, string post, CancellationToken cancellationToken = default);
     }
 }

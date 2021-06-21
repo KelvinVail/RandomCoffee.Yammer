@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Runtime.InteropServices.ComTypes;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using RandomCoffee.Core.Exceptions;
-using RandomCoffee.Yammer.Entities;
 using RandomCoffee.Yammer.Tests.TestDoubles;
 using Xunit;
 
