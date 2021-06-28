@@ -5,5 +5,18 @@ namespace RandomCoffee.Yammer
     public record YammerUser : Person
     {
         public long Id { get; init; }
+
+        public string Name
+        {
+            get
+            {
+                return FullName;
+            }
+
+            init
+            {
+                FullName = value;
+            }
+        }
     }
 }
