@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -45,6 +46,9 @@ namespace RandomCoffee.Yammer
                 await response.Content.ReadAsStreamAsync(cancellationToken),
                 StandardResolver.AllowPrivateExcludeNullCamelCase);
 
+        private static IEnumerable<YammerUser> ActiveMembers(YammerUsers page) =>
+            page.Users.Where(x => x.State == "active");
+
         private void SetBearerToken(string token) =>
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -73,7 +77,7 @@ namespace RandomCoffee.Yammer
         private async Task<bool> AddPage(List<YammerUser> members, int pageNumber, CancellationToken cancellationToken)
         {
             var page = await GetPage(pageNumber, cancellationToken);
-            members.AddRange(page.Users);
+            members.AddRange(ActiveMembers(page));
             return page.MoreAvailable;
         }
 

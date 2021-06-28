@@ -131,6 +131,19 @@ namespace RandomCoffee.Yammer.Tests
             Assert.Equal("'Bearer Token' must not be empty.", ex.Message);
         }
 
+        [Theory]
+        [InlineData(1, "MemberName")]
+        [InlineData(2, "Name")]
+        public async Task OnlyReturnActiveMembers(long id, string name)
+        {
+            AddMember(id, name, "pending");
+            AddMember(9876543210, "AnotherUser");
+
+            var members = (await GetMembers()).Cast<YammerUser>().ToList();
+
+            Assert.DoesNotContain(members, p => p.Equals(new YammerUser { Id = id, FullName = name }));
+        }
+
         public void Dispose()
         {
             _httpSpy?.Dispose();
@@ -138,7 +151,7 @@ namespace RandomCoffee.Yammer.Tests
         }
 
         private static void AssertContains(IEnumerable<YammerUser> members, long id, string name) =>
-            Assert.Contains(members, p => p.Equals(new YammerUser { Id = id, FullName = name }));
+            Assert.Contains(members, p => p.Equals(new YammerUser { Id = id, FullName = name, State = "active" }));
 
         private Task<IEnumerable<Person>> GetMembers(long groupId = 1)
         {
@@ -161,15 +174,15 @@ namespace RandomCoffee.Yammer.Tests
             return yammer.GetMembers();
         }
 
-        private void AddMember(long id, string name) =>
-            _group.Users.Add(new User { Id = id, Name = name });
+        private void AddMember(long id, string name, string state = "active") =>
+            _group.Users.Add(new User { Id = id, Name = name, State = state });
 
         private void AddMemberToPage(int page, long id, string name)
         {
             if (!_pages.ContainsKey(page))
                 _pages.Add(page, new GroupMembers());
 
-            _pages[page].Users.Add(new User { Id = id, Name = name });
+            _pages[page].Users.Add(new User { Id = id, Name = name, });
         }
 
         [DataContract]
@@ -190,6 +203,9 @@ namespace RandomCoffee.Yammer.Tests
 
             [DataMember]
             public string Name { get; init; }
+
+            [DataMember]
+            public string State { get; init; } = "active";
         }
     }
 }
