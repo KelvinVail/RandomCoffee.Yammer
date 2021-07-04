@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -15,14 +16,17 @@ namespace RandomCoffee.Yammer
 {
     public class YammerGroup : IGroup
     {
-        private const string GroupUsersUri = "api/v1/users/in_group/";
+        private const string UsersInGroupUri = "api/v1/users/in_group/";
+        private const string MessageUri = "api/v1/messages.json";
         private readonly long _id;
         private readonly HttpClient _client;
+        private readonly PostFormatter _formatter;
 
-        public YammerGroup(long id, HttpClient client, string bearerToken)
+        public YammerGroup(long id, HttpClient client, string bearerToken, PostFormatter formatter)
         {
             _id = id;
             _client = client;
+            _formatter = formatter;
             _client.BaseAddress = new Uri("https://www.yammer.com/");
             SetBearerToken(bearerToken);
         }
@@ -31,12 +35,31 @@ namespace RandomCoffee.Yammer
         {
             ValidateAndThrow();
 
-            return await GetAllPages(cancellationToken);
+            return await GetAllMembers(cancellationToken);
         }
 
         public async Task Notify(IEnumerable<Match> matches, CancellationToken cancellationToken = default)
         {
-            throw new System.NotImplementedException();
+            ValidateAndThrow();
+            if (matches is null) throw new BadRequestException("'Matches' must not be empty.");
+            var matchList = matches.ToList();
+            if (!matchList.Any()) return;
+
+            using var groupId = new StringContent(_id.ToString(new NumberFormatInfo()));
+            using var richText = new StringContent("false");
+            using var messageType = new StringContent("announcement");
+            using var title = new StringContent(_formatter.Title);
+            using var body = new StringContent(PostFormatter.Format(matchList));
+            using var content = new MultipartFormDataContent
+            {
+                { groupId, "group_id" },
+                { richText, "is_rich_text" },
+                { messageType, "message_type" },
+                { title, "title" },
+                { body, "body" },
+            };
+
+            await _client.PostAsync(new Uri(MessageUri, UriKind.Relative), content, cancellationToken);
         }
 
         private static async Task<YammerUsers> DeserializeResponse(
@@ -59,17 +82,15 @@ namespace RandomCoffee.Yammer
                 throw new BadRequestException("'Bearer Token' must not be empty.");
         }
 
-        private async Task<List<YammerUser>> GetAllPages(CancellationToken cancellationToken)
+        private async Task<List<YammerUser>> GetAllMembers(CancellationToken cancellationToken)
         {
-            bool more;
             var members = new List<YammerUser>();
             var pageNumber = 0;
             do
             {
                 pageNumber++;
-                more = await AddPage(members, pageNumber, cancellationToken);
             }
-            while (more);
+            while (await AddPage(members, pageNumber, cancellationToken));
 
             return members;
         }
@@ -84,7 +105,7 @@ namespace RandomCoffee.Yammer
         private async Task<YammerUsers> GetPage(int page, CancellationToken cancellationToken) =>
             await DeserializeResponse(
                 await _client.GetAsync(
-                    new Uri($"{GroupUsersUri}{_id}?page={page}", UriKind.Relative),
+                    new Uri($"{UsersInGroupUri}{_id}?page={page}", UriKind.Relative),
                     cancellationToken),
                 cancellationToken);
     }

@@ -24,7 +24,7 @@ namespace RandomCoffee.Yammer.Tests
             _client = new HttpClient(_httpSpy);
 
         [Fact]
-        public async Task ThrowIfGroupIdIsNull()
+        public async Task ThrowIfGroupIdIsZero()
         {
             var ex = await Assert.ThrowsAsync<BadRequestException>(() => GetMembers(default));
             Assert.Equal("'Group Id' must not be '0'.", ex.Message);
@@ -170,7 +170,7 @@ namespace RandomCoffee.Yammer.Tests
                 }
             }
 
-            var yammer = new YammerGroup(groupId, _client, _token);
+            var yammer = new YammerGroup(groupId, _client, _token, new PostFormatter("title"));
             return yammer.GetMembers();
         }
 
