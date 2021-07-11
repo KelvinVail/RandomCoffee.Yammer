@@ -44,7 +44,7 @@ namespace RandomCoffee.Yammer.Tests.TestDoubles
             Assert.IsAssignableFrom<MultipartFormDataContent>(_request.Content);
 
         public void AssertFormParameter(string key, string value) =>
-            Assert.Equal(value, _postedFormData[key]);
+            Assert.Equal(value, _postedFormData[$"\"{key}\""]);
 
         public void AssertNotCalled() =>
             Assert.False(_called);

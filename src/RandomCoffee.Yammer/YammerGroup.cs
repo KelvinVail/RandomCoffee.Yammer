@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -45,21 +44,27 @@ namespace RandomCoffee.Yammer
             var matchList = matches.ToList();
             if (!matchList.Any()) return;
 
-            using var groupId = new StringContent(_id.ToString(new NumberFormatInfo()));
+            using var groupId = new StringContent($"{_id}");
             using var richText = new StringContent("false");
             using var messageType = new StringContent("announcement");
             using var title = new StringContent(_formatter.Title);
             using var body = new StringContent(PostFormatter.Format(matchList));
             using var content = new MultipartFormDataContent
             {
-                { groupId, "group_id" },
-                { richText, "is_rich_text" },
-                { messageType, "message_type" },
-                { title, "title" },
-                { body, "body" },
+                { groupId, "\"group_id\"" },
+                { richText, "\"is_rich_text\"" },
+                { messageType, "\"message_type\"" },
+                { title, "\"title\"" },
+                { body, "\"body\"" },
             };
 
-            await _client.PostAsync(new Uri(MessageUri, UriKind.Relative), content, cancellationToken);
+            var response = await _client.PostAsync(new Uri(MessageUri, UriKind.Relative), content, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new BadRequestException(result);
+            }
         }
 
         private static async Task<YammerUsers> DeserializeResponse(

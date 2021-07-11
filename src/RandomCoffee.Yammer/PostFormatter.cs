@@ -7,16 +7,19 @@ namespace RandomCoffee.Yammer
 {
     public class PostFormatter
     {
-        public PostFormatter(string title) =>
-            Title = title;
+        private readonly string _groupName;
 
-        public string Title { get; }
+        public PostFormatter(string groupName) =>
+            _groupName = groupName;
+
+        public string Title =>
+            $"{_groupName} matches, {DateTime.UtcNow:MMMM yyyy}.";
 
         public static string Format(IEnumerable<Match> matches) =>
             matches.Aggregate(
-                $"Matches for {DateTime.UtcNow:dddd, dd MMMM yyyy}.{Environment.NewLine}{Environment.NewLine}",
+                string.Empty,
                 (current, match) => current + (
-                    string.Join(" and ", match.Persons.Cast<YammerUser>().Select(x => $"[[{x.Id}]]"))
+                    string.Join(" and ", match.Persons.Cast<YammerUser>().Select(x => $"[[user:{x.Id}]]"))
                     + "." + Environment.NewLine));
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using RandomCoffee.Core.Entities;
@@ -17,7 +18,7 @@ namespace RandomCoffee.Yammer.Tests
         private YammerGroup _group;
         private long _id = 1;
         private string _token = "token";
-        private PostFormatter _formatter = new ("Title");
+        private PostFormatter _formatter = new ("Group Name");
 
         public NotifyTests() =>
             AddMatch(999, 888);
@@ -128,12 +129,13 @@ namespace RandomCoffee.Yammer.Tests
         }
 
         [Theory]
-        [InlineData("Post Title")]
-        [InlineData("This is the title")]
-        [InlineData("This is a different title")]
-        public async Task MessageTitleIsSet(string title)
+        [InlineData("Group Name")]
+        [InlineData("This is the group name")]
+        [InlineData("This is a different group name")]
+        public async Task MessageTitleIsSet(string groupName)
         {
-            _formatter = new PostFormatter(title);
+            _formatter = new PostFormatter(groupName);
+            var title = $"{groupName} matches, {DateTime.UtcNow:MMMM yyyy}.";
 
             await Notify();
 
@@ -149,10 +151,9 @@ namespace RandomCoffee.Yammer.Tests
             AddMatch(id1, id2);
             AddMatch(id3, id4);
             var message = string.Empty;
-            message += $"Matches for {DateTime.UtcNow:dddd, dd MMMM yyyy}.{Environment.NewLine}{Environment.NewLine}";
-            message += $"[[999]] and [[888]]." + Environment.NewLine;
-            message += $"[[{id1}]] and [[{id2}]]." + Environment.NewLine;
-            message += $"[[{id3}]] and [[{id4}]]." + Environment.NewLine;
+            message += "[[user:999]] and [[user:888]]." + Environment.NewLine;
+            message += $"[[user:{id1}]] and [[user:{id2}]]." + Environment.NewLine;
+            message += $"[[user:{id3}]] and [[user:{id4}]]." + Environment.NewLine;
 
             await Notify();
 
@@ -167,6 +168,16 @@ namespace RandomCoffee.Yammer.Tests
             await Notify();
 
             _httpSpy.AssertNotCalled();
+        }
+
+        [Fact]
+        public async Task ThrowIfCallIsNotSuccessful()
+        {
+            _httpSpy.SetResponseCode = HttpStatusCode.BadRequest;
+            _httpSpy.SetResponseBody = "This is an error.";
+
+            var ex = await Assert.ThrowsAsync<BadRequestException>(Notify);
+            Assert.Equal("This is an error.", ex.Message);
         }
 
         private async Task Notify()
