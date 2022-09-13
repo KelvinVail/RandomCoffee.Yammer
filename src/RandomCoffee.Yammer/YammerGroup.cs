@@ -44,27 +44,10 @@ namespace RandomCoffee.Yammer
             var matchList = matches.ToList();
             if (!matchList.Any()) return;
 
-            using var groupId = new StringContent($"{_id}");
-            using var richText = new StringContent("false");
-            using var messageType = new StringContent("announcement");
-            using var title = new StringContent(_formatter.Title);
-            using var body = new StringContent(PostFormatter.Format(matchList));
-            using var content = new MultipartFormDataContent
-            {
-                { groupId, "\"group_id\"" },
-                { richText, "\"is_rich_text\"" },
-                { messageType, "\"message_type\"" },
-                { title, "\"title\"" },
-                { body, "\"body\"" },
-            };
+            var posts = PostFormatter.Format(matchList);
 
-            var response = await _client.PostAsync(new Uri(MessageUri, UriKind.Relative), content, cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadAsStringAsync(cancellationToken);
-                throw new BadRequestException(result);
-            }
+            for (int i = 0; i < posts.Count; i++)
+                await PostMatches(posts[i], i + 1, posts.Count, cancellationToken);
         }
 
         private static async Task<YammerUsers> DeserializeResponse(
@@ -113,5 +96,31 @@ namespace RandomCoffee.Yammer
                     new Uri($"{UsersInGroupUri}{_id}?page={page}", UriKind.Relative),
                     cancellationToken),
                 cancellationToken);
+
+        private async Task PostMatches(string formattedMatches, int pageNo, int pages, CancellationToken cancellationToken)
+        {
+            var page = pages == 1 ? string.Empty : $" {pageNo} of {pages}";
+            using var groupId = new StringContent($"{_id}");
+            using var richText = new StringContent("false");
+            using var messageType = new StringContent("announcement");
+            using var title = new StringContent(_formatter.Title + page);
+            using var body = new StringContent(formattedMatches);
+            using var content = new MultipartFormDataContent
+            {
+                { groupId, "\"group_id\"" },
+                { richText, "\"is_rich_text\"" },
+                { messageType, "\"message_type\"" },
+                { title, "\"title\"" },
+                { body, "\"body\"" },
+            };
+
+            var response = await _client.PostAsync(new Uri(MessageUri, UriKind.Relative), content, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new BadRequestException(result);
+            }
+        }
     }
 }

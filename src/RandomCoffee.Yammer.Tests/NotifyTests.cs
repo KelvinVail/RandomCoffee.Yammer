@@ -161,6 +161,18 @@ namespace RandomCoffee.Yammer.Tests
         }
 
         [Fact]
+        public async Task MakeTwoPostsIfBodyIsMoreThan10000Characters()
+        {
+            for (int i = 0; i < 500; i++)
+                AddMatch(i, i + 501);
+
+            await Notify();
+
+            Assert.EndsWith("1 of 2", _httpSpy.GetFormValue("title", 0), StringComparison.InvariantCulture);
+            Assert.EndsWith("2 of 2", _httpSpy.GetFormValue("title", 1), StringComparison.InvariantCulture);
+        }
+
+        [Fact]
         public async Task DoNotPostIfMatchesIsEmpty()
         {
             _matches = new List<Match>();
@@ -192,8 +204,8 @@ namespace RandomCoffee.Yammer.Tests
         {
             var match1 = new List<YammerUser>
             {
-                new () { Id = id1 },
-                new () { Id = id2 },
+                new () { Id = id1, FullName = $"{id1}" },
+                new () { Id = id2, FullName = $"{id2}" },
             };
             _matches.Add(new Match(match1));
         }

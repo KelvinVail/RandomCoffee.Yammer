@@ -14,7 +14,7 @@ namespace RandomCoffee.Yammer.Tests.TestDoubles
     public class HttpSpy : HttpMessageHandler
     {
         private readonly Dictionary<int, string> _pages = new ();
-        private readonly Dictionary<string, string> _postedFormData = new ();
+        private readonly List<Dictionary<string, string>> _postedFormData = new ();
         private bool _called;
         private HttpRequestMessage _request;
 
@@ -43,11 +43,14 @@ namespace RandomCoffee.Yammer.Tests.TestDoubles
         public void AssertMultiPartFormData() =>
             Assert.IsAssignableFrom<MultipartFormDataContent>(_request.Content);
 
-        public void AssertFormParameter(string key, string value) =>
-            Assert.Equal(value, _postedFormData[$"\"{key}\""]);
+        public void AssertFormParameter(string key, string value, int post = 0) =>
+            Assert.Equal(value, _postedFormData[post][$"\"{key}\""]);
 
         public void AssertNotCalled() =>
             Assert.False(_called);
+
+        public string GetFormValue(string key, int post = 0) =>
+            _postedFormData[post][$"\"{key}\""];
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -73,17 +76,19 @@ namespace RandomCoffee.Yammer.Tests.TestDoubles
 
         private async Task RecordFormData(CancellationToken cancellationToken)
         {
+            var post = new Dictionary<string, string>();
             if (_request.Content is MultipartFormDataContent form)
             {
                 var parameters = form.ToImmutableDictionary(x => x.Headers);
                 foreach (var (key, value) in parameters)
                 {
                     if (key.ContentDisposition?.Name is null) break;
-                    _postedFormData.Add(
+                    post.Add(
                         key.ContentDisposition.Name,
                         await value.ReadAsStringAsync(cancellationToken));
                 }
             }
+            _postedFormData.Add(post);
         }
 
         private StringContent GetContent(HttpRequestMessage request)
