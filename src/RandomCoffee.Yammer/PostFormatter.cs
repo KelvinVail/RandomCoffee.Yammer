@@ -34,7 +34,7 @@ namespace RandomCoffee.Yammer
                 sb.Append('.');
                 sb.Append(Environment.NewLine);
 
-                if (sb.Length <= 8000)
+                if (sb.Length <= 2500)
                     continue;
 
                 posts.Add(sb.ToString());

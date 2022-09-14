@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
+using RandomCoffee.Core;
 using RandomCoffee.Core.Entities;
 using RandomCoffee.Core.Exceptions;
+using RandomCoffee.Core.Sorters;
 using RandomCoffee.Yammer.Tests.TestDoubles;
 using Xunit;
 
@@ -161,15 +164,15 @@ namespace RandomCoffee.Yammer.Tests
         }
 
         [Fact]
-        public async Task MakeTwoPostsIfBodyIsMoreThan10000Characters()
+        public async Task MakeTwoPostsIfBodyIsMoreThan2500Characters()
         {
             for (int i = 0; i < 500; i++)
                 AddMatch(i, i + 501);
 
             await Notify();
 
-            Assert.EndsWith("1 of 2", _httpSpy.GetFormValue("title", 0), StringComparison.InvariantCulture);
-            Assert.EndsWith("2 of 2", _httpSpy.GetFormValue("title", 1), StringComparison.InvariantCulture);
+            Assert.EndsWith("1 of 7", _httpSpy.GetFormValue("title", 0), StringComparison.InvariantCulture);
+            Assert.EndsWith("2 of 7", _httpSpy.GetFormValue("title", 1), StringComparison.InvariantCulture);
         }
 
         [Fact]
